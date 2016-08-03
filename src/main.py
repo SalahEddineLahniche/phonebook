@@ -5,22 +5,30 @@ import pickle
 
 class contact(object):
 	"""docstring for contact"""
-	def __init__(self, name = "", number = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = ""):
+	def __init__(self, name = "", number = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = "", ind = '212'):
 		super(contact, self).__init__()
 		self.name = name
 		self.firstName = ""
 		self.lastName = ""
 
-		# ----
+		# ---- first last name feature
 		tmp = name.split()
 		if len(tmp) == 2:
 			self.firstName = tmp[0]
 			self.lastName = tmp[1]
 		# ----
+
 		self.nickName = ""
+		self.ind = ind
 		self.number = number
 		self.email = email
 		self.photo = photo
+
+		# ---- check the existence of the file
+		if not os.path.isfile(photo):
+			self.photo = "!not found!"
+		# ---- 
+
 		self.numbers = numbers + {'main': number}
 		self.emails = emails + {'main': email}
 		self.socialNetworks = socialNetworks
