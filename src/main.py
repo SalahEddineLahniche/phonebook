@@ -10,6 +10,13 @@ class contact(object):
 		self.name = name
 		self.firstName = ""
 		self.lastName = ""
+
+		# ----
+		tmp = name.split()
+		if len(tmp) == 2:
+			self.firstName = tmp[0]
+			self.lastName = tmp[1]
+		# ----
 		self.nickName = ""
 		self.number = number
 		self.email = email
@@ -53,7 +60,7 @@ class contact(object):
 				else:
 					startingInedx = i - count - len(frm) + 1
 					i = strFormat.find(frm, startingInedx)
-			
+
 		return strFormat
 
 
