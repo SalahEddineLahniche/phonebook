@@ -1,12 +1,14 @@
 import os
 import os.path
 import pickle
+import random
 
 
 class contact(object):
 	"""docstring for contact"""
 	def __init__(self, name = "", number = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = "", ind = '212'):
 		super(contact, self).__init__()
+		self.id = hex(random.randint(0, 0xffffffff))[2:]
 		self.name = name
 		self.firstName = ""
 		self.lastName = ""
@@ -39,6 +41,7 @@ class contact(object):
 		return self.name
 
 	def __format__(self, strFormat = ""):
+		strFormat = strFormat.replace("$id", self.id)
 		strFormat = strFormat.replace("$name", self.name)
 		strFormat = strFormat.replace("$firstName", self.firstName)
 		strFormat = strFormat.replace("$lastName", self.lastName)
