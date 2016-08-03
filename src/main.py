@@ -43,7 +43,7 @@ class contact(object):
 		strFormat = strFormat.replace("$firstName", self.firstName)
 		strFormat = strFormat.replace("$lastName", self.lastName)
 		strFormat = strFormat.replace("$nickName", self.nickName)
-		strFormat = strFormat.replace("$number", self.number)
+		strFormat = strFormat.replace("$number", '+' + self.indicatif + self.number)
 		strFormat = strFormat.replace("$email", self.email)
 		strFormat = strFormat.replace("$photo", self.photo)
 		strFormat = strFormat.replace("$notes", self.notes)
