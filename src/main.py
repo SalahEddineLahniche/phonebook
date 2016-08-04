@@ -2,6 +2,10 @@ import os
 import os.path
 import pickle
 
+class command():
+	def __init__(self):
+		self.main = ''
+		self.options = {}
 
 class contact(object):
 	"""docstring for contact"""
@@ -48,7 +52,7 @@ class contact(object):
 		strFormat = strFormat.replace("$photo", self.photo)
 		strFormat = strFormat.replace("$notes", self.notes)
 
-		formatDico = {"$social-": self.socialNetworks, "$nums-": self.numbers, "$mails-" : self.emails}
+		formatDico = {"$social-": self.socialNetworks, "$num-": self.numbers, "$mail-" : self.emails}
 		for frm in formatDico:
 			startingInedx = 0
 			i = strFormat.find(frm)
@@ -72,5 +76,125 @@ class contact(object):
 		return strFormat
 
 
-
+# initializing variables
 contacts = []
+
+commands = ['exit', 'add', 'update', 'remove', 'show', 'help']
+
+HELP_EXIT = "exit the app saving current changes\n\n"
+HELP_ADD = "Add a contact to the database\n\n"+ \
+			"Usage:\nadd [field]=[value]\n" + \
+			"Field might be: firstName, lastName, name, number(without indicatif)," + \
+			" nickName, email, photo(path), notes, social-[name], num-[name], mail-[name]\n"+ \
+			"Or simply:\n"+ \
+			"add -s [name] [number] [ind]\n\n"+ \
+			"Error:\nphoto not found or the values don't match their intended fields\n\n"
+
+HELP_UPDATE = "Update a contact from the database\n\n" + \
+			"Usage:\nupdate [contactId] [field]=[value]\n" + \
+			"contactId is the id of the contact in databasem if u don't know it, try to figure it out by show command\n"+ \
+			"Field might be: firstName, lastName, name, number(without indicatif)," + \
+			" nickName, email, photo(path), notes, social-[name], num-[name], mail-[name]\n\n"+ \
+			"Error:\nid doesn't exist, photo not found or the values don't match their intended fields\n\n"
+
+HELP_REMOVE = "Remove a contact from the database\n\n" + \
+			"Usage:\nremove [contactId]\n" + \
+			"contactId is the id of the contact in databasem if u don't know it, try to figure it out by show command\n\n"+ \
+			"Error:\nid doesn't exist, photo not found or the values don't match their intended fields\n\n"
+
+HELP_SHOW = "Show a contact from the databasem eventually with conditionsm or show all contacts\n\n" + \
+			"Usage:\nshow [contactId]\n" + \
+			"contactId is the id of the contact in databasem if u don't know it, try to figure it out by show command\n\n"+ \
+			"Error:\nid doesn't exist\n\n"+ \
+			"Usage:\nshow -c [field]=[value]\n" + \
+			"Field might be: firstName, lastName, name, number(without indicatif)," + \
+			" nickName, email, photo(path), notes, social-[name], num-[name], mail-[name]\n"+ \
+			"Usage:\nshow -all\n"
+
+HELP_HELP = "Show help for a specific command\n\n" + \
+			"Usage:\nhelp [cmd]\n" + \
+			"cmd is a command, 'help' to view all commands\n\n"+ \
+			"Error:\ncommand doesn't exist\n\n"
+HELP_ALL = "add: add a contact\n"+ \
+			"update: update a specific contact\n"+ \
+			"remove: remove a specific a contact\n"+ \
+			"show: show a specific a contact\n"+ \
+			"help [cmd]: show help for a specific command\n"+ \
+			"exit: exit phonebookm and save changes\n"
+
+
+def parse(cmd):
+	c = command()
+	c.main = cmd.pop(0)
+	tmp = 'main'
+	c.options['main'] = []
+	for i in cmd:
+		if i[0] == '-':
+			c.options[i] = []
+			tmp = i
+			continue
+		if tmp != '':
+			c.options[tmp] += [i]
+	return c
+
+
+
+
+def exc(cmd):
+	cmd = cmd.split()
+	cmd = parse(cmd)
+	if(cmd.main == "exit"):
+		cmd_exit()
+	elif(cmd.main == 'add')
+		pass
+	elif(cmd.main == 'update')
+		pass
+	elif(cmd.main == 'remove')
+		pass
+	elif(cmd.main == 'show')
+		pass
+	elif(cmd.main == 'help')
+			cmd_help(cmd)
+
+	else:
+		err("{} is not recognized".format(cmd.main))
+		cmd_help()
+# commands ------------
+def cmd_exit():
+	global exitCode
+	exitCode = 1
+
+def cmd_help(cmd):
+	if '-all' in c.options:
+		echo(eval('HELP_ALL'))
+		return
+	if len(cmd.options['main']) == 0:
+		echo(eval('HELP_ALL'))
+	elif len(cmd.options['main']) == 1:
+		if cmd.options['main'][0] in commands:
+			echo(eval('HELP_' + cmd.options['main'][0].upper()))
+		else:
+			err("{} is not recognized".format(cmd.options['main'][0]))
+# --------------------
+
+def initCmd():
+	print("\n", "master", ": ", end='', sep="")
+	exc(input())
+
+def echo(string):
+	print(string, end='')
+
+def err(strErr):
+	echo('-!- : ')
+	echo(strErr + "\n\n")
+
+
+if not os.path.isdir('data'):
+	os.mkdir('data')
+if not os.path.isdir('data/images'):
+	os.mkdir('data/images')
+
+
+while(exitCode == 0):
+	initCmd()
+
