@@ -9,34 +9,35 @@ class command():
 
 class contact(object):
 	"""docstring for contact"""
-	def __init__(self, name = "", number = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = "", ind = '212'):
+	def __init__(self, name = "", number = "", nickName = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = ""):
 		super(contact, self).__init__()
 		self.name = name
 		self.firstName = ""
 		self.lastName = ""
-
-		# ---- first last name feature
-		tmp = name.split()
-		if len(tmp) == 2:
-			self.firstName = tmp[0]
-			self.lastName = tmp[1]
-		# ----
-
-		self.nickName = ""
-		self.ind = ind
+		self.nickName = nickName
 		self.number = number
 		self.email = email
 		self.photo = photo
-
-		# ---- check the existence of the file
-		if not os.path.isfile(photo):
-			self.photo = "!not found!"
-		# ---- 
-
-		self.numbers = numbers + {'main': number}
-		self.emails = emails + {'main': email}
+		self.numbers = numbers
+		self.emails = emails
 		self.socialNetworks = socialNetworks
 		self.notes = notes
+
+	def refresh():
+		# ---- first last name feature
+		tmp = self.name.split()
+		if len(tmp) >= 2:
+			self.firstName = tmp[0]
+			self.lastName = " ".join(tmp[1:])
+		# ----
+		if not self.number[0] == "+":
+			self.number = "+212" + self.number[1:]
+		# ---- check the existence of the file
+		if not os.path.isfile(self.photo):
+			self.photo = "!not found!"
+		# ----
+		self.numbers['main'] = self.number
+		self.emails['main'] = self.email
 
 
 	def __str__(self):
@@ -47,7 +48,7 @@ class contact(object):
 		strFormat = strFormat.replace("$firstName", self.firstName)
 		strFormat = strFormat.replace("$lastName", self.lastName)
 		strFormat = strFormat.replace("$nickName", self.nickName)
-		strFormat = strFormat.replace("$number", '+' + self.indicatif + self.number)
+		strFormat = strFormat.replace("$number", self.number)
 		strFormat = strFormat.replace("$email", self.email)
 		strFormat = strFormat.replace("$photo", self.photo)
 		strFormat = strFormat.replace("$notes", self.notes)
@@ -80,20 +81,22 @@ class contact(object):
 contacts = []
 
 commands = ['exit', 'add', 'update', 'remove', 'show', 'help']
+dicoFields = {'social': "socialNetworks", "num" : "numbers", "mail": "emails"}
+exitCode = 0
 
 HELP_EXIT = "exit the app saving current changes\n\n"
 HELP_ADD = "Add a contact to the database\n\n"+ \
 			"Usage:\nadd [field]=[value]\n" + \
-			"Field might be: firstName, lastName, name, number(without indicatif)," + \
+			"Field might be: firstName, lastName, name, number," + \
 			" nickName, email, photo(path), notes, social-[name], num-[name], mail-[name]\n"+ \
 			"Or simply:\n"+ \
-			"add -s [name] [number] [ind]\n\n"+ \
+			"add -s [name] [number]\n\n"+ \
 			"Error:\nphoto not found or the values don't match their intended fields\n\n"
 
 HELP_UPDATE = "Update a contact from the database\n\n" + \
 			"Usage:\nupdate [contactId] [field]=[value]\n" + \
 			"contactId is the id of the contact in databasem if u don't know it, try to figure it out by show command\n"+ \
-			"Field might be: firstName, lastName, name, number(without indicatif)," + \
+			"Field might be: firstName, lastName, name, number," + \
 			" nickName, email, photo(path), notes, social-[name], num-[name], mail-[name]\n\n"+ \
 			"Error:\nid doesn't exist, photo not found or the values don't match their intended fields\n\n"
 
@@ -104,7 +107,7 @@ HELP_REMOVE = "Remove a contact from the database\n\n" + \
 
 HELP_SHOW = "Show a contact from the databasem eventually with conditionsm or show all contacts\n\n" + \
 			"Usage:\nshow [contactId]\n" + \
-			"contactId is the id of the contact in databasem if u don't know it, try to figure it out by show command\n\n"+ \
+			"contactId is the id of the contact in database, if u don't know it, try to figure it out by show command\n\n"+ \
 			"Error:\nid doesn't exist\n\n"+ \
 			"Usage:\nshow -c [field]=[value]\n" + \
 			"Field might be: firstName, lastName, name, number(without indicatif)," + \
@@ -145,27 +148,51 @@ def exc(cmd):
 	cmd = parse(cmd)
 	if(cmd.main == "exit"):
 		cmd_exit()
-	elif(cmd.main == 'add')
+	elif(cmd.main == 'add'):
+		cmd_add(cmd)
+	elif(cmd.main == 'update'):
 		pass
-	elif(cmd.main == 'update')
+	elif(cmd.main == 'remove'):
 		pass
-	elif(cmd.main == 'remove')
+	elif(cmd.main == 'show'):
 		pass
-	elif(cmd.main == 'show')
-		pass
-	elif(cmd.main == 'help')
-			cmd_help(cmd)
+	elif(cmd.main == 'help'):
+		cmd_help(cmd)
 
 	else:
 		err("{} is not recognized".format(cmd.main))
-		cmd_help()
+		cmd_help(parse(['help']))
 # commands ------------
 def cmd_exit():
 	global exitCode
 	exitCode = 1
 
+def cmd_add(cmd):
+	global contacts
+	if "-s" in cmd.options:
+		if len(cmd.options["-s"]) < 2 or len(cmd.options["-s"]) > 2:
+			err("'add -s' parameters are invalid, it accept exectly 2 params [name] [number]")
+			return
+		c = contact(name = cmd.options["-s"][0].replace("_", " "), number = cmd.options["-s"][1])
+	else:
+		c = contact()
+		for field in cmd.options["main"]:
+			field = field.split("=")
+			if "-" in field[0]:
+				field[0] = field[0].split("-")
+				if field[0][0] not in dicoFields:
+					err("%s is not a proper field, type 'help add' for more infos" % field[0][0])
+					return
+				exec("c.%s['%s'] = '%s'" % (dicoFields[field[0][0]], field[0][1], field[1]))
+				continue
+			if field[0] not in dir(c) or field[0] in ["socialNetworks" , "emails", "numbers"]:
+				err("%s is not a proper field, type 'help add' for more infos" % field[0])
+				return
+			exec("c.%s = '%s'" % (field[0], field[1]))
+		contacts += [c]
+
 def cmd_help(cmd):
-	if '-all' in c.options:
+	if '-all' in cmd.options:
 		echo(eval('HELP_ALL'))
 		return
 	if len(cmd.options['main']) == 0:
@@ -185,7 +212,7 @@ def echo(string):
 	print(string, end='')
 
 def err(strErr):
-	echo('-!- : ')
+	echo('[!] ')
 	echo(strErr + "\n\n")
 
 
