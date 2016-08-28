@@ -140,8 +140,17 @@ def parse(cmd):
 			c.options[tmp] += [i]
 	return c
 
+def save():
+	f = open("data/database.dat", 'wb')
+	pickle.dump(contacts, f)
+	f.close()
 
-
+def load():
+	global contacts
+	if os.path.isfile("data/database.dat"):
+		f = open("data/database.dat", 'rb')
+		contacts = pickle.load(f)
+		f.close()	
 
 def exc(cmd):
 	cmd = cmd.split()
@@ -222,6 +231,10 @@ if not os.path.isdir('data/images'):
 	os.mkdir('data/images')
 
 
+load()
+
+
 while(exitCode == 0):
 	initCmd()
+	save()
 
