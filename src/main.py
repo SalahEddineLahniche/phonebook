@@ -1,6 +1,55 @@
 import os
 import os.path
 import pickle
+import shutil
+import sys
+import re
+import random as rnd
+from functools import partial
+
+def rndStr(length):
+	tmp = [chr(i) for i in range(ord('a'), ord('f') + 1)] + [str(i) for i in range(10)]
+	l = len(tmp)
+	s = ''
+	for j in range(length):
+		r = rnd.randint(0, l - 1)
+		s += tmp[r]
+	return s
+
+def print_contact(contact_object):
+	global PRINT_FORMAT
+	var_match = variables.search(PRINT_FORMAT)
+	total_length = int(var_match.group('total_length'))
+	field_length = int(var_match.group('field_length'))
+	sep = separators.search(PRINT_FORMAT).group('sep') * total_length + "\n"
+	body_match = body.search(PRINT_FORMAT)
+	PRINT_FORMAT = body_match.group('body')
+	def line_handeler(contact_object, total_length, field_length, sep,line_match):
+		if line_match.group('end') == '':
+			rslt = ''
+			rslt += line_match.group('starting_sep')
+			rslt += (line_match.group('field').ljust(field_length) +
+					format(contact_object, line_match.group('value'))).ljust(total_length - 2)
+			rslt += line_match.group('ending_sep')
+			rslt += "\n"
+			rslt += sep
+			return rslt
+		elif line_match.group('end') == '+':
+			rslt = ''
+			match = field_generator_keyword.search(line_match.group('field'))
+			keyword = match.group('keyword')
+			dico = eval('contact_object.' + dicoFields[keyword])
+			for key in dico:
+				rslt += line_match.group('starting_sep')
+				rslt += (field_generator_keyword.sub(key, line_match.group('field')).ljust(field_length) + 
+						format(contact_object, field_generator_keyword.sub(key, line_match.group('value')))).ljust(total_length - 2)
+				rslt += line_match.group('ending_sep')
+				rslt += '\n'
+				rslt += sep
+			return rslt
+	PRINT_FORMAT = lines.sub(partial(line_handeler, contact_object, total_length, field_length, sep), PRINT_FORMAT)
+	print(sep, end='')
+	print(PRINT_FORMAT)
 
 class command():
 	def __init__(self):
@@ -11,19 +60,36 @@ class contact(object):
 	"""docstring for contact"""
 	def __init__(self, name = "", number = "", nickName = "", email = "", photo = "", numbers = {}, emails = {}, socialNetworks = {}, notes = ""):
 		super(contact, self).__init__()
+		self.id = rndStr(10)
 		self.name = name
 		self.firstName = ""
 		self.lastName = ""
 		self.nickName = nickName
 		self.number = number
 		self.email = email
-		self.photo = photo
 		self.numbers = numbers
 		self.emails = emails
 		self.socialNetworks = socialNetworks
 		self.notes = notes
 
-	def refresh():
+		if not os.path.isfile(photo):
+			self.photo = "!not found!"
+		else:
+			self.photo = "data/images/" + self.id + photo[photo.rindex('.'):]
+			if os.path.isfile(self.photo):
+				while True:
+					ans = input("Overwrite ? (y|n) (%s)" % self.photo)
+					if ans == 'y':
+						shutil.copy2(photo, self.photo)
+					elif ans == 'n':
+						pass
+					else:
+						print("Invalid answer !")
+						continue
+					break
+
+
+	def refresh(self):
 		# ---- first last name feature
 		tmp = self.name.split()
 		if len(tmp) >= 2:
@@ -79,6 +145,26 @@ class contact(object):
 
 # initializing variables
 contacts = []
+
+PRINT_FORMAT = '''\
+/60
+/18
+$*
+{#/|[ Name]: $name ($nickName)/|
+#/|[ Number]: $number/|
+#/|[ Email]: $email/|
+#/|[ Notes]: $notes/|
+#/|[ Social-$social]: $social-$social/|+
+#/|[ $num Number]: $num-$num/|+
+#/|[ Email-$mail]: $mail-$mail/|+
+}\
+'''
+
+body = re.compile(r'(?<={)(?P<body>.*)(?=})', re.S)
+variables = re.compile(r'^/(?P<total_length>\d+)\s+/(?P<field_length>\d+)\s+')
+separators = re.compile(r'(?:^\$)(?P<sep>.)', re.M)
+lines = re.compile(r'(?:^#/)(?P<starting_sep>.)(\[(?P<field>[^\]]+)\](?P<value>[^/]+)(?:/)(?P<ending_sep>.)(?P<end>.*))\n', re.M)
+field_generator_keyword = re.compile(r'(?:\$)(?P<keyword>[^-\W]+)(?!-|[a-zA-Z0-9_])')
 
 commands = ['exit', 'add', 'update', 'remove', 'show', 'help']
 dicoFields = {'social': "socialNetworks", "num" : "numbers", "mail": "emails"}
@@ -150,6 +236,8 @@ def load():
 	if os.path.isfile("data/database.dat"):
 		f = open("data/database.dat", 'rb')
 		contacts = pickle.load(f)
+		for c in contacts:
+			c.refresh()
 		f.close()	
 
 def exc(cmd):
@@ -198,7 +286,7 @@ def cmd_add(cmd):
 				err("%s is not a proper field, type 'help add' for more infos" % field[0])
 				return
 			exec("c.%s = '%s'" % (field[0], field[1]))
-		contacts += [c]
+	contacts += [c]
 
 def cmd_help(cmd):
 	if '-all' in cmd.options:
@@ -232,7 +320,6 @@ if not os.path.isdir('data/images'):
 
 
 load()
-
 
 while(exitCode == 0):
 	initCmd()
